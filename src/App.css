@@ -12,8 +12,49 @@
     #121612;
 }
 
-/* Side Browser / узкая панель Cursor — без рамки, сразу приложение */
-@media (max-width: 720px) {
+/* Telegram Mini App + телефоны: на весь экран, без рамки */
+html.is-telegram .preview-help,
+html.is-mobile .preview-help {
+  display: none !important;
+}
+
+html.is-telegram .desktop-stage,
+html.is-mobile .desktop-stage {
+  padding: 0;
+  place-items: stretch;
+  gap: 0;
+  min-height: var(--app-height, 100dvh);
+  height: var(--app-height, 100dvh);
+  background: var(--bg);
+  transition: background 0.45s ease;
+}
+
+html.is-telegram .phone-frame,
+html.is-mobile .phone-frame {
+  width: 100%;
+  max-width: none;
+  height: var(--app-height, 100dvh);
+  min-height: var(--app-height, 100dvh);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--bg);
+  animation: none;
+}
+
+html.is-telegram .phone-notch,
+html.is-mobile .phone-notch {
+  display: none;
+}
+
+html.is-telegram .phone-screen,
+html.is-mobile .phone-screen {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Браузер / узкая панель */
+@media (max-width: 900px) {
   .preview-help {
     display: none;
   }
@@ -23,6 +64,8 @@
     place-items: stretch;
     background: var(--bg);
     transition: background 0.45s ease;
+    min-height: 100dvh;
+    height: 100dvh;
   }
 
   .phone-frame {
@@ -41,7 +84,8 @@
   }
 }
 
-@media (min-width: 721px) and (min-width: 960px) {
+/* ПК: рамка телефона + подсказка */
+@media (min-width: 901px) {
   .desktop-stage {
     grid-template-columns: auto minmax(200px, 260px);
     justify-content: center;
@@ -194,8 +238,8 @@
 
 .theme-toggle {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
   z-index: 5;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -740,7 +784,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  padding: 10px 10px 16px;
+  padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--line);
   background: var(--surface);
   transition:
@@ -809,6 +853,22 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+@media (max-width: 360px) {
+  .choice-pills {
+    grid-template-columns: 1fr;
+  }
+
+  .screen__header h1 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (min-width: 901px) {
+  .phone-frame {
+    width: min(100%, 390px);
+  }
 }
 
 .choice-pill {
@@ -888,12 +948,9 @@
 }
 
 .choice-menu__list {
-  position: absolute;
-  z-index: 50;
-  left: 0;
-  right: 0;
-  top: calc(100% + 6px);
-  margin: 0;
+  position: relative;
+  z-index: 2;
+  margin: 8px 0 0;
   padding: 6px;
   list-style: none;
   background: var(--surface);
@@ -901,9 +958,10 @@
   border-radius: 16px;
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent),
-    0 16px 32px rgba(0, 0, 0, 0.35);
-  max-height: 220px;
+    0 10px 20px rgba(0, 0, 0, 0.18);
+  max-height: min(240px, 40vh);
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   animation: menu-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 

@@ -10,7 +10,7 @@ type Props<T extends string | number> = {
   value: T
   options: ChoiceOption<T>[]
   onChange: (value: T) => void
-  /** pills = горизонтальные чипы; menu = выпадающий список */
+  /** pills = сетка кнопок; menu = раскрывающийся список в потоке (без наложений) */
   variant?: 'pills' | 'menu'
 }
 
@@ -27,11 +27,15 @@ export function ChoiceControl<T extends string | number>({
 
   useEffect(() => {
     if (!open) return
-    function onDoc(e: MouseEvent) {
+    function onDoc(e: MouseEvent | TouchEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('touchstart', onDoc)
+    }
   }, [open])
 
   if (variant === 'pills') {

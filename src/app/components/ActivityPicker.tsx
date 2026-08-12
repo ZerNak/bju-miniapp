@@ -14,7 +14,7 @@ type Props = {
   variant?: 'pills' | 'menu'
 }
 
-export function ActivityPicker({ value, onChange, variant = 'menu' }: Props) {
+export function ActivityPicker({ value, onChange, variant = 'pills' }: Props) {
   return (
     <ChoiceControl
       value={value}

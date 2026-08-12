@@ -56,12 +56,12 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
         />
       </label>
 
-      <label className="field">
+      <div className="field">
         <span>Активность</span>
-        <ActivityPicker value={activity} onChange={setActivity} variant="menu" />
-      </label>
+        <ActivityPicker value={activity} onChange={setActivity} variant="pills" />
+      </div>
 
-      <label className="field">
+      <div className="field">
         <span className="field__label-row">
           Процент похудения: {deficitPct}%
           <InfoTip text="Это процент результата, на который вы хотите похудеть." />
@@ -73,7 +73,7 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
           value={deficitPct}
           onChange={(e) => setDeficitPct(Number(e.target.value))}
         />
-      </label>
+      </div>
 
       <button type="button" className="btn btn--primary" onClick={save}>
         Сохранить цели
