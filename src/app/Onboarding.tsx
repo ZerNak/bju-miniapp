@@ -1,9 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
+import { DurationPicker } from './components/DurationPicker'
 import { InfoTip } from './components/InfoTip'
-import { calcGoals } from '../lib/nutrition'
+import { calcGoals, calcPlanMeta } from '../lib/nutrition'
 import { saveProfile } from '../lib/storage'
-import type { Profile, Sex } from '../types'
+import type { PlanWeeks, Profile, Sex } from '../types'
 
 type Props = {
   firstName: string
@@ -22,12 +23,14 @@ export function Onboarding({ firstName, onDone }: Props) {
   const [age, setAge] = useState('')
   const [heightCm, setHeightCm] = useState('')
   const [weightKg, setWeightKg] = useState('')
+  const [targetWeightKg, setTargetWeightKg] = useState('')
   const [activity, setActivity] = useState<Profile['activity']>(1.375)
-  const [deficitPct, setDeficitPct] = useState(20)
+  const [weeks, setWeeks] = useState<PlanWeeks>(12)
 
   const ageN = parsePositive(age)
   const heightN = parsePositive(heightCm)
   const weightN = parsePositive(weightKg)
+  const targetN = parsePositive(targetWeightKg)
 
   const valid =
     ageN !== null &&
@@ -38,32 +41,38 @@ export function Onboarding({ firstName, onDone }: Props) {
     heightN <= 230 &&
     weightN !== null &&
     weightN >= 35 &&
-    weightN <= 250
+    weightN <= 250 &&
+    targetN !== null &&
+    targetN >= 35 &&
+    targetN < weightN!
 
-  const preview = useMemo(() => {
-    if (!valid || ageN === null || heightN === null || weightN === null) return null
-    return calcGoals({
+  const draft: Profile | null = useMemo(() => {
+    if (!valid || ageN === null || heightN === null || weightN === null || targetN === null) {
+      return null
+    }
+    return {
       sex,
       age: ageN,
       heightCm: heightN,
       weightKg: weightN,
+      targetWeightKg: targetN,
+      weeks,
       activity,
-      deficitPct,
-    })
-  }, [valid, sex, ageN, heightN, weightN, activity, deficitPct])
+      deficitPct: 0,
+    }
+  }, [valid, sex, ageN, heightN, weightN, targetN, weeks, activity])
+
+  const meta = useMemo(() => (draft ? calcPlanMeta(draft) : null), [draft])
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    if (!valid || ageN === null || heightN === null || weightN === null) return
+    if (!draft) return
+    const goals = calcGoals(draft)
     const profile: Profile = {
-      sex,
-      age: ageN,
-      heightCm: heightN,
-      weightKg: weightN,
-      activity,
-      deficitPct,
+      ...draft,
+      deficitPct: meta?.deficitPct ?? 15,
     }
-    saveProfile(profile, calcGoals(profile))
+    saveProfile(profile, goals)
     onDone()
   }
 
@@ -125,7 +134,7 @@ export function Onboarding({ firstName, onDone }: Props) {
         </label>
 
         <label className="field">
-          <span>Вес, кг</span>
+          <span>Текущий вес, кг</span>
           <input
             type="number"
             inputMode="decimal"
@@ -139,35 +148,52 @@ export function Onboarding({ firstName, onDone }: Props) {
           />
         </label>
 
+        <label className="field">
+          <span className="field__label-row">
+            Целевой вес, кг
+            <InfoTip text="Вес, к которому хотите прийти. Должен быть меньше текущего." />
+          </span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={35}
+            max={249}
+            step={0.1}
+            placeholder="Например, 70"
+            value={targetWeightKg}
+            onChange={(e) => setTargetWeightKg(e.target.value)}
+            required
+          />
+        </label>
+
+        <div className="field">
+          <span className="field__label-row">
+            Срок похудения
+            <InfoTip text="За сколько хотите прийти к целевому весу. От срока зависит дневной дефицит калорий." />
+          </span>
+          <DurationPicker value={weeks} onChange={setWeeks} />
+        </div>
+
         <div className="field">
           <span>Активность</span>
           <ActivityPicker value={activity} onChange={setActivity} variant="pills" />
         </div>
 
-        <div className="field">
-          <span className="field__label-row">
-            Процент похудения: {deficitPct}%
-            <InfoTip text="Это процент результата, на который вы хотите похудеть." />
-          </span>
-          <input
-            type="range"
-            min={10}
-            max={25}
-            value={deficitPct}
-            onChange={(e) => setDeficitPct(Number(e.target.value))}
-          />
-        </div>
-
         <div className="goal-preview">
-          {preview ? (
+          {meta ? (
             <>
-              <strong>{preview.calories} ккал</strong>
+              <strong>{meta.goals.calories} ккал</strong>
               <span>
-                Б {preview.proteinG} · Ж {preview.fatG} · У {preview.carbsG}
+                Б {meta.goals.proteinG} · Ж {meta.goals.fatG} · У {meta.goals.carbsG}
+              </span>
+              <span className="muted">
+                ≈ {meta.kgPerWeek} кг/нед · дефицит ~{meta.deficitPct}%
               </span>
             </>
           ) : (
-            <span className="muted">Заполни возраст, рост и вес — появится расчёт цели</span>
+            <span className="muted">
+              Заполни данные и целевой вес — появится расчёт ккал и БЖУ
+            </span>
           )}
         </div>
 

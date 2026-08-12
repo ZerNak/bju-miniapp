@@ -2,12 +2,19 @@ export type Sex = 'male' | 'female'
 
 export type Screen = 'today' | 'add' | 'manual' | 'profile' | 'confirm'
 
+export type PlanWeeks = 4 | 8 | 12 | 16 | 24
+
 export interface Profile {
   sex: Sex
   age: number
   heightCm: number
   weightKg: number
   activity: 1.2 | 1.375 | 1.55 | 1.725
+  /** Целевой вес, кг */
+  targetWeightKg: number
+  /** Срок похудения в неделях */
+  weeks: PlanWeeks
+  /** Устаревшее поле — сохраняем для совместимости */
   deficitPct: number
 }
 

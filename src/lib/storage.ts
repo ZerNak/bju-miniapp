@@ -1,3 +1,4 @@
+import { calcGoals, resolveTargetWeight, resolveWeeks } from './nutrition'
 import type { AppState, DiaryEntry, Goals, Profile } from '../types'
 
 const KEY = 'bju-miniapp-v1'
@@ -8,14 +9,27 @@ const empty: AppState = {
   entries: [],
 }
 
+function normalizeProfile(raw: Profile): Profile {
+  const targetWeightKg = resolveTargetWeight(raw)
+  const weeks = resolveWeeks(raw)
+  return {
+    ...raw,
+    targetWeightKg,
+    weeks,
+    deficitPct: raw.deficitPct ?? 15,
+  }
+}
+
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return { ...empty, entries: [] }
     const parsed = JSON.parse(raw) as AppState
+    const profile = parsed.profile ? normalizeProfile(parsed.profile) : null
+    const goals = profile ? calcGoals(profile) : (parsed.goals ?? null)
     return {
-      profile: parsed.profile ?? null,
-      goals: parsed.goals ?? null,
+      profile,
+      goals,
       entries: Array.isArray(parsed.entries) ? parsed.entries : [],
     }
   } catch {

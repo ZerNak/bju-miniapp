@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
+import { DurationPicker } from './components/DurationPicker'
 import { InfoTip } from './components/InfoTip'
-import { calcGoals } from '../lib/nutrition'
+import { calcGoals, calcPlanMeta, resolveTargetWeight, resolveWeeks } from '../lib/nutrition'
 import { clearAll, saveProfile } from '../lib/storage'
-import type { AppState, Profile } from '../types'
+import type { AppState, PlanWeeks, Profile } from '../types'
 
 type Props = {
   state: AppState
@@ -14,39 +15,51 @@ type Props = {
 export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
   const profile = state.profile!
   const [weightKg, setWeightKg] = useState(profile.weightKg)
-  const [deficitPct, setDeficitPct] = useState(profile.deficitPct)
+  const [targetWeightKg, setTargetWeightKg] = useState(resolveTargetWeight(profile))
+  const [weeks, setWeeks] = useState<PlanWeeks>(resolveWeeks(profile))
   const [activity, setActivity] = useState<Profile['activity']>(profile.activity)
 
-  const draft: Profile = useMemo(
-    () => ({ ...profile, weightKg, deficitPct, activity }),
-    [profile, weightKg, deficitPct, activity],
-  )
+  const draft: Profile = useMemo(() => {
+    const base: Profile = {
+      ...profile,
+      weightKg,
+      targetWeightKg,
+      weeks,
+      activity,
+      deficitPct: profile.deficitPct ?? 15,
+    }
+    const meta = calcPlanMeta(base)
+    return { ...base, deficitPct: meta.deficitPct }
+  }, [profile, weightKg, targetWeightKg, weeks, activity])
 
-  const preview = useMemo(() => calcGoals(draft), [draft])
+  const meta = useMemo(() => calcPlanMeta(draft), [draft])
 
   const dirty =
     weightKg !== profile.weightKg ||
-    deficitPct !== profile.deficitPct ||
+    targetWeightKg !== resolveTargetWeight(profile) ||
+    weeks !== resolveWeeks(profile) ||
     activity !== profile.activity
 
-  // Сразу применяем цели в приложении (Сегодня и т.д.)
   useEffect(() => {
     if (!dirty) return
+    if (targetWeightKg >= weightKg || targetWeightKg < 35) return
     const id = window.setTimeout(() => {
       saveProfile(draft, calcGoals(draft))
       onChange()
     }, 250)
     return () => window.clearTimeout(id)
-  }, [dirty, draft, onChange])
+  }, [dirty, draft, onChange, targetWeightKg, weightKg])
 
   useEffect(() => {
     setWeightKg(profile.weightKg)
-    setDeficitPct(profile.deficitPct)
+    setTargetWeightKg(resolveTargetWeight(profile))
+    setWeeks(resolveWeeks(profile))
     setActivity(profile.activity)
-  }, [profile.weightKg, profile.deficitPct, profile.activity])
+  }, [profile])
 
   function save() {
     if (!dirty) return
+    if (targetWeightKg >= weightKg || targetWeightKg < 35) return
     saveProfile(draft, calcGoals(draft))
     onChange()
   }
@@ -66,14 +79,17 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
       </header>
 
       <div className="goal-preview">
-        <strong>{preview.calories} ккал / день</strong>
+        <strong>{meta.goals.calories} ккал / день</strong>
         <span>
-          Б {preview.proteinG} · Ж {preview.fatG} · У {preview.carbsG}
+          Б {meta.goals.proteinG} · Ж {meta.goals.fatG} · У {meta.goals.carbsG}
+        </span>
+        <span className="muted">
+          ≈ {meta.kgPerWeek} кг/нед · дефицит ~{meta.deficitPct}%
         </span>
       </div>
 
       <label className="field">
-        <span>Вес, кг</span>
+        <span>Текущий вес, кг</span>
         <input
           type="number"
           min={35}
@@ -84,23 +100,32 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
         />
       </label>
 
-      <div className="field">
-        <span>Активность</span>
-        <ActivityPicker value={activity} onChange={setActivity} variant="pills" />
-      </div>
+      <label className="field">
+        <span className="field__label-row">
+          Целевой вес, кг
+          <InfoTip text="Вес, к которому хотите прийти. Должен быть меньше текущего." />
+        </span>
+        <input
+          type="number"
+          min={35}
+          max={249}
+          step={0.1}
+          value={targetWeightKg}
+          onChange={(e) => setTargetWeightKg(Number(e.target.value))}
+        />
+      </label>
 
       <div className="field">
         <span className="field__label-row">
-          Процент похудения: {deficitPct}%
-          <InfoTip text="Это процент результата, на который вы хотите похудеть." />
+          Срок похудения
+          <InfoTip text="За сколько хотите прийти к целевому весу. От срока зависит дневной дефицит калорий." />
         </span>
-        <input
-          type="range"
-          min={10}
-          max={25}
-          value={deficitPct}
-          onChange={(e) => setDeficitPct(Number(e.target.value))}
-        />
+        <DurationPicker value={weeks} onChange={setWeeks} />
+      </div>
+
+      <div className="field">
+        <span>Активность</span>
+        <ActivityPicker value={activity} onChange={setActivity} variant="pills" />
       </div>
 
       <button
