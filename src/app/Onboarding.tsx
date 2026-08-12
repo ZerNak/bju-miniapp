@@ -10,34 +10,56 @@ type Props = {
   onDone: () => void
 }
 
+function parsePositive(raw: string): number | null {
+  if (raw.trim() === '') return null
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return null
+  return n
+}
+
 export function Onboarding({ firstName, onDone }: Props) {
   const [sex, setSex] = useState<Sex>('male')
-  const [age, setAge] = useState(28)
-  const [heightCm, setHeightCm] = useState(175)
-  const [weightKg, setWeightKg] = useState(80)
+  const [age, setAge] = useState('')
+  const [heightCm, setHeightCm] = useState('')
+  const [weightKg, setWeightKg] = useState('')
   const [activity, setActivity] = useState<Profile['activity']>(1.375)
   const [deficitPct, setDeficitPct] = useState(20)
 
-  const preview = useMemo(
-    () =>
-      calcGoals({
-        sex,
-        age,
-        heightCm,
-        weightKg,
-        activity,
-        deficitPct,
-      }),
-    [sex, age, heightCm, weightKg, activity, deficitPct],
-  )
+  const ageN = parsePositive(age)
+  const heightN = parsePositive(heightCm)
+  const weightN = parsePositive(weightKg)
+
+  const valid =
+    ageN !== null &&
+    ageN >= 14 &&
+    ageN <= 90 &&
+    heightN !== null &&
+    heightN >= 120 &&
+    heightN <= 230 &&
+    weightN !== null &&
+    weightN >= 35 &&
+    weightN <= 250
+
+  const preview = useMemo(() => {
+    if (!valid || ageN === null || heightN === null || weightN === null) return null
+    return calcGoals({
+      sex,
+      age: ageN,
+      heightCm: heightN,
+      weightKg: weightN,
+      activity,
+      deficitPct,
+    })
+  }, [valid, sex, ageN, heightN, weightN, activity, deficitPct])
 
   function submit(e: FormEvent) {
     e.preventDefault()
+    if (!valid || ageN === null || heightN === null || weightN === null) return
     const profile: Profile = {
       sex,
-      age,
-      heightCm,
-      weightKg,
+      age: ageN,
+      heightCm: heightN,
+      weightKg: weightN,
       activity,
       deficitPct,
     }
@@ -78,10 +100,12 @@ export function Onboarding({ firstName, onDone }: Props) {
           <span>Возраст</span>
           <input
             type="number"
+            inputMode="numeric"
             min={14}
             max={90}
+            placeholder="Например, 28"
             value={age}
-            onChange={(e) => setAge(Number(e.target.value))}
+            onChange={(e) => setAge(e.target.value)}
             required
           />
         </label>
@@ -90,10 +114,12 @@ export function Onboarding({ firstName, onDone }: Props) {
           <span>Рост, см</span>
           <input
             type="number"
+            inputMode="numeric"
             min={120}
             max={230}
+            placeholder="Например, 175"
             value={heightCm}
-            onChange={(e) => setHeightCm(Number(e.target.value))}
+            onChange={(e) => setHeightCm(e.target.value)}
             required
           />
         </label>
@@ -102,11 +128,13 @@ export function Onboarding({ firstName, onDone }: Props) {
           <span>Вес, кг</span>
           <input
             type="number"
+            inputMode="decimal"
             min={35}
             max={250}
             step={0.1}
+            placeholder="Например, 80"
             value={weightKg}
-            onChange={(e) => setWeightKg(Number(e.target.value))}
+            onChange={(e) => setWeightKg(e.target.value)}
             required
           />
         </label>
@@ -131,13 +159,23 @@ export function Onboarding({ firstName, onDone }: Props) {
         </div>
 
         <div className="goal-preview">
-          <strong>{preview.calories} ккал</strong>
-          <span>
-            Б {preview.proteinG} · Ж {preview.fatG} · У {preview.carbsG}
-          </span>
+          {preview ? (
+            <>
+              <strong>{preview.calories} ккал</strong>
+              <span>
+                Б {preview.proteinG} · Ж {preview.fatG} · У {preview.carbsG}
+              </span>
+            </>
+          ) : (
+            <span className="muted">Заполни возраст, рост и вес — появится расчёт цели</span>
+          )}
         </div>
 
-        <button type="submit" className="btn btn--primary">
+        <button
+          type="submit"
+          className={valid ? 'btn btn--primary' : 'btn btn--saved'}
+          disabled={!valid}
+        >
           Начать
         </button>
       </form>
