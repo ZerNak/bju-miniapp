@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
 import { InfoTip } from './components/InfoTip'
 import { calcGoals } from '../lib/nutrition'
@@ -17,20 +17,37 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
   const [deficitPct, setDeficitPct] = useState(profile.deficitPct)
   const [activity, setActivity] = useState<Profile['activity']>(profile.activity)
 
-  const preview = useMemo(
-    () =>
-      calcGoals({
-        ...profile,
-        weightKg,
-        deficitPct,
-        activity,
-      }),
+  const draft: Profile = useMemo(
+    () => ({ ...profile, weightKg, deficitPct, activity }),
     [profile, weightKg, deficitPct, activity],
   )
 
+  const preview = useMemo(() => calcGoals(draft), [draft])
+
+  const dirty =
+    weightKg !== profile.weightKg ||
+    deficitPct !== profile.deficitPct ||
+    activity !== profile.activity
+
+  // Сразу применяем цели в приложении (Сегодня и т.д.)
+  useEffect(() => {
+    if (!dirty) return
+    const id = window.setTimeout(() => {
+      saveProfile(draft, calcGoals(draft))
+      onChange()
+    }, 250)
+    return () => window.clearTimeout(id)
+  }, [dirty, draft, onChange])
+
+  useEffect(() => {
+    setWeightKg(profile.weightKg)
+    setDeficitPct(profile.deficitPct)
+    setActivity(profile.activity)
+  }, [profile.weightKg, profile.deficitPct, profile.activity])
+
   function save() {
-    const next: Profile = { ...profile, weightKg, deficitPct, activity }
-    saveProfile(next, calcGoals(next))
+    if (!dirty) return
+    saveProfile(draft, calcGoals(draft))
     onChange()
   }
 
@@ -86,8 +103,13 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
         />
       </div>
 
-      <button type="button" className="btn btn--primary" onClick={save}>
-        Сохранить цели
+      <button
+        type="button"
+        className={dirty ? 'btn btn--primary' : 'btn btn--saved'}
+        disabled={!dirty}
+        onClick={save}
+      >
+        {dirty ? 'Сохранить цели' : 'Сохранено'}
       </button>
 
       <button type="button" className="btn btn--danger" onClick={reset}>

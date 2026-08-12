@@ -584,6 +584,21 @@ html.is-mobile .phone-screen {
   color: var(--tg-button-text);
 }
 
+.btn--saved,
+.btn--primary:disabled {
+  background: var(--track);
+  color: var(--muted);
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn--saved:hover,
+.btn--primary:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .btn--secondary {
   background: var(--accent-soft);
   color: var(--accent);
