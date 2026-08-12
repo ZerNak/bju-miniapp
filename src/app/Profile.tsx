@@ -61,7 +61,7 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
       </label>
 
       <label className="field">
-        <span>Дефицит: {deficitPct}%</span>
+        <span>Процент похудения: {deficitPct}%</span>
         <input
           type="range"
           min={10}

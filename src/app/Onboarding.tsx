@@ -116,7 +116,7 @@ export function Onboarding({ firstName, onDone }: Props) {
         </label>
 
         <label className="field">
-          <span>Дефицит калорий: {deficitPct}%</span>
+          <span>Процент похудения: {deficitPct}%</span>
           <input
             type="range"
             min={10}
