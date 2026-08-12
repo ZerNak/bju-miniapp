@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
+import { InfoTip } from './components/InfoTip'
 import { calcGoals } from '../lib/nutrition'
 import { clearAll, saveProfile } from '../lib/storage'
 import type { AppState, Profile } from '../types'
@@ -61,7 +62,10 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
       </label>
 
       <label className="field">
-        <span>Процент похудения: {deficitPct}%</span>
+        <span className="field__label-row">
+          Процент похудения: {deficitPct}%
+          <InfoTip text="Это процент результата, на который вы хотите похудеть." />
+        </span>
         <input
           type="range"
           min={10}

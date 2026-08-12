@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
+import { InfoTip } from './components/InfoTip'
 import { calcGoals } from '../lib/nutrition'
 import { saveProfile } from '../lib/storage'
 import type { Profile, Sex } from '../types'
@@ -116,7 +117,10 @@ export function Onboarding({ firstName, onDone }: Props) {
         </label>
 
         <label className="field">
-          <span>Процент похудения: {deficitPct}%</span>
+          <span className="field__label-row">
+            Процент похудения: {deficitPct}%
+            <InfoTip text="Это процент результата, на который вы хотите похудеть." />
+          </span>
           <input
             type="range"
             min={10}
