@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ActivityPicker } from './components/ActivityPicker'
 import { InfoTip } from './components/InfoTip'
 import { calcGoals } from '../lib/nutrition'
@@ -16,6 +16,17 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
   const [weightKg, setWeightKg] = useState(profile.weightKg)
   const [deficitPct, setDeficitPct] = useState(profile.deficitPct)
   const [activity, setActivity] = useState<Profile['activity']>(profile.activity)
+
+  const preview = useMemo(
+    () =>
+      calcGoals({
+        ...profile,
+        weightKg,
+        deficitPct,
+        activity,
+      }),
+    [profile, weightKg, deficitPct, activity],
+  )
 
   function save() {
     const next: Profile = { ...profile, weightKg, deficitPct, activity }
@@ -38,9 +49,9 @@ export function ProfileScreen({ state, onChange, onResetOnboarding }: Props) {
       </header>
 
       <div className="goal-preview">
-        <strong>{state.goals?.calories} ккал / день</strong>
+        <strong>{preview.calories} ккал / день</strong>
         <span>
-          Б {state.goals?.proteinG} · Ж {state.goals?.fatG} · У {state.goals?.carbsG}
+          Б {preview.proteinG} · Ж {preview.fatG} · У {preview.carbsG}
         </span>
       </div>
 
